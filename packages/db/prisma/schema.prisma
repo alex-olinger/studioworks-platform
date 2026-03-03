@@ -1,0 +1,25 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RenderJobStatus {
+  QUEUED
+  RUNNING
+  UPLOADING
+  COMPLETE
+  FAILED
+}
+
+model RenderJob {
+  id           String          @id @default(uuid())
+  status       RenderJobStatus @default(QUEUED)
+  spec         Json
+  outputAssets Json?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+}

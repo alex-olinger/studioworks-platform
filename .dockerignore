@@ -1,0 +1,31 @@
+# Node
+node_modules
+.pnpm-store
+npm-debug.log
+pnpm-debug.log
+
+# Git
+.git
+.gitignore
+
+# Build outputs
+.next
+dist
+build
+
+# Env files
+.env
+.env.local
+.env.development
+.env.production
+
+# Turbo cache
+.turbo
+
+# Logs
+logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

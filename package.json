@@ -1,0 +1,35 @@
+{
+  "name": "studioworks-platform",
+  "private": true,
+  "packageManager": "pnpm@10.30.3",
+  "scripts": {
+    "infra:up": "docker compose -f docker/compose.dev.yml up -d",
+    "infra:down": "docker compose -f docker/compose.dev.yml down",
+    "infra:logs": "docker compose -f docker/compose.dev.yml logs -f",
+    "infra:reset": "docker compose -f docker/compose.dev.yml down -v",
+
+    "dev": "pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "start": "pnpm -r start",
+
+    "test": "vitest run --workspace vitest.workspace.ts",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "vitest": "^2.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "cpu-features",
+      "esbuild",
+      "msgpackr-extract",
+      "prisma",
+      "protobufjs",
+      "msw",
+      "ssh2"
+    ]
+  }
+}

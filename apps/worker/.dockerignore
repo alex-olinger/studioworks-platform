@@ -1,0 +1,11 @@
+# Ignore local dev artifacts
+node_modules
+.pnpm-store
+.next
+dist
+build
+.env
+.env.local
+.turbo
+logs
+*.log

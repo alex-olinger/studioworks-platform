@@ -1,0 +1,24 @@
+import { defineConfig } from 'vitest/config'
+
+export default defineConfig({
+  test: {
+    name: 'api',
+    environment: 'node',
+    include: ['src/**/*.test.ts'],
+    testTimeout: 30_000,
+    hookTimeout: 60_000,
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        singleFork: true,
+      },
+    },
+    globalSetup: ['./src/test/global-setup.ts'],
+    setupFiles: ['./src/test/setup.ts'],
+    coverage: {
+      provider: 'v8',
+      include: ['src/**'],
+      exclude: ['src/**/*.test.ts', 'src/test/**'],
+    },
+  },
+})
