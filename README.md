@@ -9,7 +9,7 @@ StudioWorks models the film production pipeline — projects, scenes, and shots 
 ## Architecture Overview
 
 ```
-studioworks-platform/
+studioworks/
   apps/
     web/                        # Next.js frontend
       src/app/
