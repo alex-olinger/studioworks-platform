@@ -1,0 +1,53 @@
+# ignores
+
+tasks/
+.claude
+C:*
+
+# Node modules
+node_modules/
+.pnpm-store/
+
+# Build outputs
+.next/
+dist/
+build/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.production
+
+# Prisma
+prisma/dev.db
+
+# OS files
+.DS_Store
+Thumbs.db
+*.Identifier
+
+# Editor
+.vscode/
+.idea/
+
+# Turbo
+.turbo/
+
+# Coverage
+coverage/
+
+# Next.js
+next-env.d.ts
+
+# Vitest
+*.timestamp-*.mjs
+
+# Misc
+*.tsbuildinfo
