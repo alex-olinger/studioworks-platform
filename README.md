@@ -2,77 +2,73 @@
 
 **A TypeScript-first monorepo platform for generating cinematic AI video through a structured, studio-style workflow.**
 
-StudioWorks models the film production pipeline — projects, scenes, and shots — and orchestrates AI video rendering through a persistent job queue, strict shared contracts, and a clean separation of concerns across three runtime services.
+StudioWorks orchestrates AI video rendering through a persistent job queue, strict shared contracts, and a clean separation of concerns across three runtime services.
 
 ---
 
 ## Architecture Overview
 
 ```
-studioworks-platform/
+studioworks/
   apps/
-    web/                        # Next.js frontend
+    web/                        # Next.js frontend (port 3000)
       src/app/
-        render/                 # Render job tracker
-          page.tsx              # Job list / dashboard
+        render/                 # Render job tracker (in progress)
+          page.tsx              # Job list
           [id]/page.tsx         # Job detail — status, progress, output assets
-        studio/                 # Creative marketing studio
+        studio/                 # Creative marketing studio (future)
           clients/
-          scripts/              # Commercial screenplays
+          scripts/
           storyboards/
-          prompts/              # Prompt builder, template library, render submission
-    api/                        # Fastify backend — persistence, validation, job submission
-    worker/                     # BullMQ service — async render job execution
+          prompts/
+    api/                        # Fastify backend (port 4000)
+    worker/                     # BullMQ async job processor
   packages/
     shared/                     # RenderSpec Zod schema, queue constants, shared types
-      src/
-        studio/                 # Future studio-specific types (PromptTemplate, Script, etc.)
     db/                         # Prisma schema and database client
   docker/
     compose.dev.yml
-  infra/
-    ci/
-    k8s/
-    terraform/
   docs/
     ARCHITECTURE.md
-    DEPLOYMENT_PLAN.md
-    LOCAL_DEV.md
+    RENDER-PIPELINE.md
+    DEPLOYMENT-PLAN.md
+    LOCAL-DEV.md
+    PLAN.md
 ```
 
 ### Services
 
 | Service | Runtime | Responsibility |
 |---|---|---|
-| `web` | Next.js | Shot editor UI, RenderSpec construction, status polling, video playback |
-| `api` | Node / Fastify | CRUD for projects/scenes/shots, render submission, job status |
-| `worker` | Node / BullMQ | Job consumption, provider adapter execution, asset record creation |
+| `web` | Next.js | RenderSpec construction, job submission, status polling |
+| `api` | Node / Fastify | Validate RenderSpec, persist RenderJob, enqueue by ID |
+| `worker` | Node / BullMQ | Dequeue job, load spec from DB, drive state machine, call provider adapter |
 
 ### Data Flow
 
 ```
 Frontend builds RenderSpec
-  → API validates + persists immutable RenderJob record
-    → Worker receives renderJobId
-      → Worker loads spec from DB
-        → Executes provider adapter
+  → API validates (Zod) + persists immutable RenderJob
+    → Worker receives renderJobId only
+      → Worker loads spec from Postgres
+        → Calls provider adapter
           → QUEUED → RUNNING → UPLOADING → COMPLETE / FAILED
 ```
 
 ### Data Stores
 
-- **Postgres** — users, projects, scenes, shots, assets, render job specs
-- **Redis** — BullMQ job queue
+- **Postgres** — `RenderJob` records and embedded `RenderSpec` JSON (source of truth)
+- **Redis** — BullMQ job queue (notification channel only — never stores the spec)
 
 ---
 
 ## Key Design Decisions
 
-- **Immutable RenderJob specs** — the spec is persisted at submission time; the worker only ever receives a `renderJobId` and loads the spec from the database. This decouples the worker from the API's request lifecycle entirely.
-- **Deterministic spec hashing** — RenderSpecs are hashed at submission time to support deduplication and auditability.
-- **Shared TypeScript contracts** — `@studioworks/shared` and `@studioworks/db` are the single source of truth for all cross-service types, preventing drift.
-- **Provider-agnostic worker** — the worker executes a provider adapter stub, making it straightforward to swap or extend with additional AI video providers.
-- **Python GPU rendering path** — the worker can be replaced or augmented with a Python-based GPU rendering service without touching the API or frontend boundaries.
+- **Immutable RenderJob specs** — the spec is persisted at submission time and never modified. The worker only receives a `renderJobId` and loads the spec from Postgres itself. This decouples the worker from the API's request lifecycle entirely.
+- **Minimal queue payload** — only `{ renderJobId }` is enqueued, never the full spec. Queue stays lightweight regardless of spec size.
+- **Shared TypeScript contracts** — `@studioworks/shared` is the single source of truth for all cross-service types (`RenderSpec`, `RENDER_QUEUE_NAME`). `@studioworks/db` is the only path to the database — never import `@prisma/client` directly.
+- **Provider-agnostic worker** — the worker calls a provider adapter stub, making it straightforward to swap or extend with additional AI video providers without touching API or queue logic.
+- **Python GPU path** — the worker can be replaced or augmented with a Python-based GPU rendering service without touching the API or frontend boundaries.
 
 ---
 
@@ -80,13 +76,13 @@ Frontend builds RenderSpec
 
 - **Language:** TypeScript (strict, throughout)
 - **Monorepo:** pnpm workspaces + Turborepo
-- **Frontend:** Next.js
+- **Frontend:** Next.js (App Router)
 - **Backend:** Fastify
 - **Queue:** BullMQ (Redis-backed)
 - **ORM:** Prisma
 - **Database:** PostgreSQL
-- **Infrastructure:** Docker Compose (local), Kubernetes + Terraform (production)
-- **Validation:** Zod (RenderSpec schema)
+- **Validation:** Zod (`RenderSpec` schema in `@studioworks/shared`)
+- **Testing:** Vitest + Testcontainers
 
 ---
 
@@ -95,49 +91,58 @@ Frontend builds RenderSpec
 ### Prerequisites
 
 - Node.js v20+
-- pnpm
+- pnpm v10+
 - Docker (for Postgres and Redis)
 
 ### Local Development
 
 ```bash
-# Install dependencies
 pnpm install
-
-# Start Postgres and Redis
-docker compose -f docker/compose.dev.yml up -d
-
-# Copy environment variables
-cp .env.example .env
-
-# Run database migrations
-pnpm --filter @studioworks/db db:migrate
-
-# Start all services in development mode
-pnpm dev
+cp .env.example .env                                    # defaults work with Docker Compose
+pnpm infra:up                                           # start Postgres (5432) + Redis (6379)
+pnpm --filter @studioworks/db db:migrate:deploy         # apply migrations (first time only)
+pnpm dev                                                # web (3000), api (4000), worker
 ```
 
-See [`docs/LOCAL_DEV.md`](docs/LOCAL_DEV.md) for a full local setup walkthrough.
+See [`docs/LOCAL-DEV.md`](docs/LOCAL-DEV.md) for the full setup walkthrough.
 
 ---
 
-## Domain Model
+## Current State
 
-```
-User
- └── Projects
-      └── Scenes
-           └── Shots
-                └── RenderJobs → Assets
-```
+The core render pipeline is implemented and tested end-to-end:
 
-Each **Shot** holds the creative configuration (prompt, duration, resolution, seed). A **RenderJob** captures an immutable snapshot of the RenderSpec at submission time. **Assets** are created by the worker upon successful completion and reference the output video file.
+- `POST /render-jobs` — validates `RenderSpec`, persists `RenderJob`, enqueues ID
+- Worker consumes the queue, drives the state machine, calls the provider adapter stub
+- 9 tests passing across shared schema, API route, and worker processor
+
+The frontend (`/render`, `/render/[id]`) and API read endpoints (`GET /render-jobs`, `GET /render-jobs/:id`) are in progress — see [`docs/PLAN.md`](docs/PLAN.md) for the detailed build plan.
 
 ---
 
 ## RenderSpec
 
-The `RenderSpec` is a Zod-validated contract defined in `@studioworks/shared`. It is built client-side, validated again on submission, and stored immutably in the `RenderJob` record. The worker re-validates the spec on load before execution.
+The `RenderSpec` is a Zod-validated contract defined in `@studioworks/shared`:
+
+```json
+{
+  "projectId": "proj_123",
+  "scenes": [
+    {
+      "id": "scene_1",
+      "shots": [
+        {
+          "id": "shot_1",
+          "prompt": "A cinematic wide shot of a mountain at sunrise",
+          "durationSeconds": 5
+        }
+      ]
+    }
+  ]
+}
+```
+
+Built client-side, validated on submission, stored immutably in the `RenderJob` record.
 
 ---
 
@@ -145,26 +150,18 @@ The `RenderSpec` is a Zod-validated contract defined in `@studioworks/shared`. I
 
 ```
 QUEUED → RUNNING → UPLOADING → COMPLETE
-                              → FAILED
+                             → FAILED
 ```
 
-Lifecycle state is written by the worker directly to the `RenderJob` record in Postgres. The API exposes a status endpoint for polling.
+State is written by the worker directly to the `RenderJob` record in Postgres.
 
 ---
 
 ## Planned: Creative Marketing Studio
 
-A creative marketing studio module is planned as a future expansion of the platform. It will allow users to organize AI video/image production work for clients — storing commercial scripts (screenplays), storyboards, and building reusable prompt libraries with automation tools for image and video generation.
+A creative marketing studio module is planned as a future expansion. It will allow users to organize AI video/image production work for clients — storing commercial scripts, storyboards, and reusable prompt libraries.
 
-Route scaffolding and shared type placeholders are already in place under `apps/web/src/app/studio/` and `packages/shared/src/studio/`. The current build focus remains on the core render pipeline.
-
----
-
-## Deployment
-
-Production infrastructure is defined under `infra/` using Terraform (cloud resources) and Kubernetes manifests (service deployment). CI pipelines are defined under `infra/ci/`.
-
-See [`docs/DEPLOYMENT_PLAN.md`](docs/DEPLOYMENT_PLAN.md) for details.
+Route scaffolding and shared type placeholders are already in place under `apps/web/src/app/studio/` and `packages/shared/src/studio/`.
 
 ---
 
@@ -172,10 +169,11 @@ See [`docs/DEPLOYMENT_PLAN.md`](docs/DEPLOYMENT_PLAN.md) for details.
 
 | Document | Description |
 |---|---|
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Full system architecture |
-| [`docs/RENDER_PIPELINE.md`](docs/RENDER_PIPELINE.md) | Render job lifecycle, data flows, state machine, gotchas |
-| [`docs/DEPLOYMENT_PLAN.md`](docs/DEPLOYMENT_PLAN.md) | Production deployment guide |
-| [`docs/LOCAL_DEV.md`](docs/LOCAL_DEV.md) | Local development setup |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | System design, key decisions, source file map |
+| [`docs/RENDER-PIPELINE.md`](docs/RENDER-PIPELINE.md) | Render job lifecycle, data flows, state machine, gotchas |
+| [`docs/PLAN.md`](docs/PLAN.md) | MVP build plan — Days 1–4 complete, Days 5–9 remaining |
+| [`docs/DEPLOYMENT-PLAN.md`](docs/DEPLOYMENT-PLAN.md) | Deployment status and post-MVP production roadmap |
+| [`docs/LOCAL-DEV.md`](docs/LOCAL-DEV.md) | Local development setup |
 
 ---
 
