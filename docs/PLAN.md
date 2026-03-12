@@ -34,10 +34,10 @@ The original 9-day plan had Days 1–4 mostly complete but included work items (
 
 ~~BullMQ producer (API) and consumer (worker) connected. Additionally completed:~~
 
-- `POST /render-jobs` endpoint (validate → persist → enqueue by ID)
-- `processRenderJob` state machine (QUEUED → RUNNING → UPLOADING → COMPLETE/FAILED)
-- Provider adapter stub
-- 9 tests passing across shared, API, and worker
+- `~~POST /render-jobs` endpoint (validate → persist → enqueue by ID)~~
+- ~~`processRenderJob` state machine (QUEUED → RUNNING → UPLOADING → COMPLETE/FAILED)~~
+- ~~Provider adapter stub~~
+- ~~9 tests passing across shared, API, and worker~~
 
 ---
 
