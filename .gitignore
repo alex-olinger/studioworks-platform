@@ -1,6 +1,6 @@
 # ignores
 
-.claude
+.claude/settings*.json
 C:*
 
 # Node modules
