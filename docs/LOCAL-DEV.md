@@ -74,19 +74,23 @@ Runs all three services in parallel:
 
 ### Create a new migration after changing `schema.prisma`
 
+Use this when **you** edited `schema.prisma` and need the database to reflect those changes.
+
 ```bash
 cd packages/db && node_modules/.bin/prisma migrate dev --name <migration-name>
 ```
 
-Dev only — interactive. Generates a new SQL file and applies it.
+Dev only — interactive. Generates a new SQL migration file, applies it to the DB, and regenerates the Prisma client.
 
-### Regenerate the Prisma client without migrating
+### Regenerate the Prisma client after pulling someone else's schema changes
+
+Use this when you pulled a commit that updated `schema.prisma` (and its migration was already applied to the DB). The schema and DB are already in sync — you just need your local TypeScript client to catch up.
 
 ```bash
 pnpm --filter @studioworks/db db:generate
 ```
 
-Run this if you pulled schema changes but don't need a new migration.
+Reads `schema.prisma` and regenerates the TypeScript client — updated types, models, and query methods. Does not touch the database.
 
 ---
 
