@@ -1,9 +1,9 @@
 # StudioWorks Platform Architecture
 
-apps/ = runtime services
-packages/ = shared logic
-docker/ = local infrastructure containers
-infra/ = production infrastructure definition
+- `apps/` — runtime services
+- `packages/` — shared logic
+- `docker/` — local infrastructure containers
+- `infra/` — production infrastructure definition
 
 ---
 
