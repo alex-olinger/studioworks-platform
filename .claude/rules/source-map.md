@@ -46,3 +46,9 @@ Read this before grepping. These are the files that matter.
 | File | Purpose |
 |---|---|
 | `src/studio/index.ts` | Placeholder for future studio types — `PromptTemplate`, `CommercialScript`, `Storyboard`, `Client` |
+
+## `tasks/`
+| File | Purpose |
+|---|---|
+| `tasks/todo.md` | Active plan for the current task — checkable items, updated in place as work progresses |
+| `tasks/lessons.md` | Running log of corrections and rules derived from them — review at session start |

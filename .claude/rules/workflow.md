@@ -9,22 +9,9 @@
 
 ## Subagent Orchestration
 
-Subagents are for parallel or context-heavy work. The main agent decides when to delegate; subagents never spawn further subagents.
-
-**Use a subagent when:**
-- Work is parallelizable (e.g., updating `apps/api` and `apps/web` simultaneously)
-- A subtask generates large intermediate output that would pollute the main context
-- Research, exploration, or analysis independent of the main task
-
-**Don't use a subagent when:**
-- The subtask requires reasoning about the overall plan — keep that in the main agent
-- Subtasks have sequential dependencies — chain them explicitly
-- The task is small — overhead isn't worth it
-
-**Subagent rules:**
-- One focused goal per subagent — don't bundle unrelated work
-- Subagents have no memory — pass all needed context explicitly (goal, files, decisions already made, expected output shape)
+- Subagents have no memory — pass all needed context explicitly: goal, relevant files, decisions already made, expected output shape
 - Summarize subagent output before acting on it; verify it matches the stated goal
+- The main agent decides when to delegate; subagents never spawn further subagents
 
 ## Common Task Checklists
 

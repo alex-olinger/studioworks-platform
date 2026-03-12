@@ -6,7 +6,7 @@
 - Avoid `any` — prefer `unknown` with runtime Zod parsing at service boundaries
 
 ## Schema & Validation
-- All API endpoints accepting a `RenderSpec` must validate with `.parse()` or `.safeParse()` — never skip
+- All API endpoints must validate request bodies and params with Zod — never skip
 - Zod errors surface as structured 400 responses, not unhandled exceptions
 
 ## Fastify API Routes (`apps/api`)
