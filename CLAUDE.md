@@ -28,3 +28,44 @@ For any non-trivial task, follow this sequence:
 6. **Capture lessons** — update `tasks/lessons.md` after any user correction or unexpected outcome
 
 After any correction: update `tasks/lessons.md` with the pattern and a rule that prevents the same mistake. Review `tasks/lessons.md` at session start for relevant context.
+
+---
+
+## Anti-Over-Engineering
+
+**The problem:** Claude defaults to framework-style abstractions learned from open-source
+codebases. Resist this. A 500-line flat module is better than 1500 lines across 3–4 layers
+unless the layering is explicitly justified.
+
+### Rules
+
+- **Flat before layered.** Write the simplest direct implementation first. Do not introduce
+  abstraction layers unless a concrete, present need requires them — not a hypothetical
+  future one.
+
+- **No speculative generalization.** Do not extract base classes, generic factories,
+  plugin systems, or strategy patterns unless more than one concrete use case exists
+  *right now* in this codebase.
+
+- **Line count as a smell check.** If an implementation exceeds 2× the line count of a
+  direct equivalent, stop and justify each layer explicitly. If you can't justify it,
+  flatten it.
+
+- **One layer of indirection is usually enough.** Service → DB call. Handler → Service.
+  Do not add a Repository, a UnitOfWork, and an AbstractBaseRepository on top of a
+  Postgres client that already handles connection pooling.
+
+- **No framework scaffolding for app code.** Do not structure application logic the way
+  a library or framework would structure its own internals. Apps are not frameworks.
+
+- **Ask before adding an interface/abstract class.** If a new interface has exactly one
+  implementation and no test double requires it, do not create it.
+
+### The check before committing
+
+Before presenting code, answer:
+1. Could this be written with one fewer layer? If yes — write that version.
+2. Is every abstraction boundary justified by something that exists today, not "we might need it"?
+3. Would a new team member understand this without reading three other files first?
+
+If any answer is "no," refactor before presenting.
